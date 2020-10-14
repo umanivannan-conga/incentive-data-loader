@@ -6,28 +6,6 @@ namespace IncentiveDataLoader.RecordTypes
 {
 	public class IncentiveModel : Record
 	{
-		public IncentiveModel()
-		{
-
-		}
-		public IncentiveModel(String referenceId,String name,String startDate,String endDate,String subTypeId,String formulaId)
-		{
-			Attributes =new RecordAttributes()
-			{
-				Type = "Apttus_Config2__Incentive__c",
-				ReferenceId=referenceId
-			};
-			Name = name;
-			Sequence = 1;
-			StartDate = startDate;
-			EndDate = endDate;
-			Status = "New";
-			UseType = "Billing";
-			BenefitLevel = "Individual Participants";
-			MeasurementLevel = "Individual Participants";
-			IncentiveSubtypeId = subTypeId;
-			IncentiveFormulaId = formulaId;
-		}
 		[JsonPropertyName("Name")]
 		public string Name { get; set; }
 		[JsonPropertyName("Apttus_Config2__Sequence__c")]

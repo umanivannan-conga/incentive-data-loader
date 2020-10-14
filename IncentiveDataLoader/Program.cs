@@ -19,7 +19,7 @@ namespace IncentiveDataLoader
 				.AddJsonFile("appsettings.json", true, true)
 				.Build();
 
-			AppSettings settings = config.GetSection("AppSettings").Get<AppSettings>();
+			var settings = config.GetSection("AppSettings").Get<AppSettings>();
 
 			WriteLine(settings.Configuration.FormulaId);
 		}
