@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace IncentiveDataLoader
@@ -21,6 +22,14 @@ namespace IncentiveDataLoader
 		public string FormulaId { get; set; }
 		[JsonPropertyName("IncentiveNamePrefix")]
 		public string IncentiveNamePrefix { get; set; }
+		[JsonPropertyName("StartDate")]
+		public DateTime StartDate { get; set; }
+		[JsonPropertyName("EndDate")]
+		public DateTime EndDate { get; set; }
+		[JsonPropertyName("CategoryDimensionId")]
+		public string CategoryDimensionId { get; set; }
+		[JsonPropertyName("ProductDimensionId")]
+		public string ProductDimensionId { get; set; }	
 	}
 
 	public class LoadSettings

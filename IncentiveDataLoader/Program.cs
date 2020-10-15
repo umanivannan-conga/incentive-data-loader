@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using IncentiveDataLoader.RecordTypes;
 using Microsoft.Extensions.Configuration;
 using static System.Console;
 #endregion
@@ -21,7 +20,8 @@ namespace IncentiveDataLoader
 
 			var settings = config.GetSection("AppSettings").Get<AppSettings>();
 
-			WriteLine(settings.Configuration.FormulaId);
+			var loader = new Loader();
+			loader.Load(settings);
 		}
 	}
 }
