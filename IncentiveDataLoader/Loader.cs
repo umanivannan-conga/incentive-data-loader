@@ -39,12 +39,9 @@ namespace IncentiveDataLoader
 				.ToList();
 
 			List<String> accountIds = File.ReadAllLines(Constants.AccountListFileName).ToList();
-
+			var accountOffset = 0;
 			foreach (var setting in settings.LoadSettings)
 			{
-				var priceRulesetCount = setting.ProductCount + setting.CategoryBreakups.Sum(item => item.Count);
-
-
 				for (var index = 1; index <= setting.IncentiveCount; index++)
 				{
 					var incentiveModel = new IncentiveModel
@@ -78,9 +75,13 @@ namespace IncentiveDataLoader
 								ReferenceId = Guid.NewGuid().ToString("N")
 							},
 							Account = accountId,
-							Incentive = incentiveModel.Attributes.ReferenceId
+							Incentive = $"@{incentiveModel.Attributes.ReferenceId}",
+							StartDate = $"{settings.Configuration.StartDate:yyyy-MM-dd}T00:00:00.000Z",
+							EndDate = $"{settings.Configuration.EndDate:yyyy-MM-dd}T00:00:00.000Z",
 						});
 					}
+
+					accountOffset += 200;
 
 					for (var productIndex = 1; productIndex <= setting.ProductCount; productIndex++)
 					{
@@ -442,8 +443,12 @@ namespace IncentiveDataLoader
 				PriceRuleSetId = $"@{priceRule1.Attributes.ReferenceId}",
 				AdjustmentAmount = "10",
 				Dimension4Value = null,
-				Dimension2ListValue = productIds[productIndex],
-				Dimension1ListValue = null,
+				Dimension2ListValue = catalogItemType.ToLower(CultureInfo.InvariantCulture) == "product"
+					? productIds[productIndex]
+					: null,
+				Dimension1ListValue = catalogItemType.ToLower(CultureInfo.InvariantCulture) == "category"
+					? productIds[productIndex]
+					: null,
 				AdjustmentValueType = "Constant",
 				AdjustmentType = null,
 				Sequence = "1"

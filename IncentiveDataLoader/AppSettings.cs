@@ -38,6 +38,8 @@ namespace IncentiveDataLoader
 		public int IncentiveCount { get; set; }
 		[JsonPropertyName("ProductCount")]
 		public int ProductCount { get; set; }
+		[JsonPropertyName("ParticipantCount")]
+		public int ParticipantCount { get; set; }
 		[JsonPropertyName("CategoryBreakups")]
 		public List<CategoryBreakup> CategoryBreakups{get; set; }
 	}

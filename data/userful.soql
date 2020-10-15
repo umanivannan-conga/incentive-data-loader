@@ -1,0 +1,3 @@
+incentiveid a1wJ00000032wrTIAQ
+
+SELECT Id FROM Apttus_Config2__PriceRule__c WHERE Apttus_Config2__RulesetId__c in (SELECT PriceRuleSet__c FROM IncentivePriceRuleSetMapping__c WHERE Incentive__c = 'a1wJ00000032wrTIAQ')

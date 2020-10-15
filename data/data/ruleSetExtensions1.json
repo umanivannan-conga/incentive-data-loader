@@ -1,0 +1,64 @@
+{
+  "records": [
+    {
+      "Name": "PRS-0000000000",
+      "TierCount__c": 1,
+      "PriceRulesetId__c": "@08a307ab0d0f4803a26a0cc919f7ad2f",
+      "Criteria__c": "",
+      "attributes": {
+        "type": "PriceRulesetExtension__c",
+        "referenceId": "181405f9292e4ae78141b173b59c55ba"
+      }
+    },
+    {
+      "Name": "PRS-0000000000",
+      "TierCount__c": 1,
+      "PriceRulesetId__c": "@42f101eec47144b892563f1bd53f2c79",
+      "Criteria__c": "",
+      "attributes": {
+        "type": "PriceRulesetExtension__c",
+        "referenceId": "c8b4e55e97934b28a8f941b67f76a674"
+      }
+    },
+    {
+      "Name": "PRS-0000000000",
+      "TierCount__c": 1,
+      "PriceRulesetId__c": "@0ed16f4a8abd497a9463d8c6e1f910ff",
+      "Criteria__c": "",
+      "attributes": {
+        "type": "PriceRulesetExtension__c",
+        "referenceId": "c572b63ac72145c4b08baecdf9d8a01d"
+      }
+    },
+    {
+      "Name": "PRS-0000000001",
+      "TierCount__c": 1,
+      "PriceRulesetId__c": "@d2ecca0ead3d4dccba2ea12f9d6796e6",
+      "Criteria__c": "",
+      "attributes": {
+        "type": "PriceRulesetExtension__c",
+        "referenceId": "ea4538b08adf45fab706857b816f9f12"
+      }
+    },
+    {
+      "Name": "PRS-0000000000",
+      "TierCount__c": 1,
+      "PriceRulesetId__c": "@54c925dfb89f41319a03561bd2f91542",
+      "Criteria__c": "",
+      "attributes": {
+        "type": "PriceRulesetExtension__c",
+        "referenceId": "8e65cb30d66441a480c5336f6cc0a8e4"
+      }
+    },
+    {
+      "Name": "PRS-0000000001",
+      "TierCount__c": 1,
+      "PriceRulesetId__c": "@e5f9ea0a327742699eddef1bfce9364a",
+      "Criteria__c": "",
+      "attributes": {
+        "type": "PriceRulesetExtension__c",
+        "referenceId": "97d4ec2ef1c145438b941a5f18a7be6d"
+      }
+    }
+  ]
+}
