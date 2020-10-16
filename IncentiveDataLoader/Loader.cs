@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using IncentiveDataLoader.Core;
 using IncentiveDataLoader.Models;
-using Microsoft.Extensions.FileSystemGlobbing;
+using static System.Console;
 
 #endregion
 
@@ -32,18 +32,18 @@ namespace IncentiveDataLoader
 			var priceRuleEntries = new List<PriceRuleEntry>();
 			var participants = new List<ParticipantModel>();
 
-			List<String> productIds = File.ReadAllLines(Constants.ProductListFileName).ToList();
-			List<CategoryListItem> categories = File.ReadAllLines(Constants.CategoryListFileName)
+			var productIds = File.ReadAllLines(Constants.ProductListFileName).ToList();
+			var categories = File.ReadAllLines(Constants.CategoryListFileName)
 				.Skip(1)
 				.Select(CategoryListItem.FromCsv)
 				.ToList();
 
-			List<String> accountIds = File.ReadAllLines(Constants.AccountListFileName).ToList();
-			var accountOffset = 0;
+			var accountIds = File.ReadAllLines(Constants.AccountListFileName).ToList();
 			foreach (var setting in settings.LoadSettings)
 			{
 				for (var index = 1; index <= setting.IncentiveCount; index++)
 				{
+					Write($"\rIncentive {index}");
 					var incentiveModel = new IncentiveModel
 					{
 						Attributes = new RecordAttributes
@@ -81,8 +81,6 @@ namespace IncentiveDataLoader
 						});
 					}
 
-					accountOffset += 200;
-
 					for (var productIndex = 1; productIndex <= setting.ProductCount; productIndex++)
 					{
 						createPriceRuleSet(settings, productIndex - 1, incentiveModel, ruleSets, ruleSetExtensions, incentiveRulesetMappings, priceRules, priceRuleExtensions, productIds, priceRuleEntries);
@@ -108,23 +106,27 @@ namespace IncentiveDataLoader
 					incentiveRecords.Add(incentiveModel);
 				}
 			}
+
 			Directory.CreateDirectory("data");
-			List<DataPlanModel> dataPlanItems = new List<DataPlanModel>();
+			WriteLine("");
+			WriteLine("Creating Files");
 
-
-			var fileIndex = 1;
-			var filesList = new List<String>();
+			var dataPlanItems = new List<DataPlanModel>();
+			var filesList = new List<string>();
 			foreach (var records in incentiveRecords.Split(200))
 			{
-				var filename = $"incentive{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath = $@"data\incentive\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}{filename}";
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
 				var file = new ImportFile<IncentiveModel> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
+				File.WriteAllText(folderPath,
 					JsonSerializer.Serialize(file, new JsonSerializerOptions
 					{
 						WriteIndented = true
 					}));
-				filesList.Add(filename);
+				filesList.Add(folderPath.Replace("data\\",""));
 			}
+			Write("\rCreating incentive files");
 			dataPlanItems.Add(new DataPlanModel()
 			{
 				Files = filesList,
@@ -132,20 +134,23 @@ namespace IncentiveDataLoader
 				SaveRefs = true,
 				SObject = "Apttus_Config2__Incentive__c"
 			});
-
-			fileIndex = 1;
-			filesList = new List<String>();
+			Write("\rCreating rule set files");
+			filesList = new List<string>();
 			foreach (var records in ruleSets.Split(25))
 			{
-				var filename = $"priceRuleSet{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
 				var file = new ImportFile<PriceRuleSetModel> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
+				var folderPath =
+					$@"data\rule-set\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
 					JsonSerializer.Serialize(file, new JsonSerializerOptions
 					{
 						WriteIndented = true
 					}));
-				filesList.Add(filename);
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
+
 			dataPlanItems.Add(new DataPlanModel()
 			{
 				Files = filesList,
@@ -153,22 +158,23 @@ namespace IncentiveDataLoader
 				SaveRefs = true,
 				SObject = "Apttus_Config2__PriceRuleset__c"
 			});
-
-
-
-			fileIndex = 1;
-			filesList = new List<String>();
+			Write("\rCreating rule set incentive mapping files");
+			filesList = new List<string>();
 			foreach (var records in incentiveRulesetMappings.Split(200))
 			{
-				var filename = $"priceRuleSetMapping{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath =
+					$@"data\rule-set-incentive-map\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
 				var file = new ImportFile<IncentivePriceRulesetMap> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
 					JsonSerializer.Serialize(file, new JsonSerializerOptions
 					{
 						WriteIndented = true
 					}));
-				filesList.Add(filename);
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
+
 			dataPlanItems.Add(new DataPlanModel()
 			{
 				Files = filesList,
@@ -177,21 +183,23 @@ namespace IncentiveDataLoader
 				SObject = "Apttus_CIM__IncentivePriceRuleSetMapping__c"
 			});
 
-
-			fileIndex = 1;
-			filesList = new List<String>();
+			Write("\rCreating rule set extensions mapping files");
+			filesList = new List<string>();
 			foreach (var records in ruleSetExtensions.Split(200))
 			{
-				var filename = $"ruleSetExtensions{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath =
+					$@"data\rule-set-extension\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
 				var file = new ImportFile<PriceRulesetExtensionModel> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
 					JsonSerializer.Serialize(file, new JsonSerializerOptions
 					{
 						WriteIndented = true
 					}));
-				filesList.Add(filename);
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
-			dataPlanItems.Add(new DataPlanModel()
+			dataPlanItems.Add(new DataPlanModel
 			{
 				Files = filesList,
 				ResolveRefs = true,
@@ -199,18 +207,22 @@ namespace IncentiveDataLoader
 				SObject = Constants.Namespace + "PriceRulesetExtension__c"
 			});
 
-			fileIndex = 1;
-			filesList = new List<String>();
+			Write("\rCreating rules files");
+
+			filesList = new List<string>();
 			foreach (var records in priceRules.Split(25))
 			{
-				var filename = $"priceRules{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath =
+					$@"data\rule\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
 				var file = new ImportFile<PriceRuleModel> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
 					JsonSerializer.Serialize(file, new JsonSerializerOptions
 					{
 						WriteIndented = true
 					}));
-				filesList.Add(filename);
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
 			dataPlanItems.Add(new DataPlanModel()
 			{
@@ -220,20 +232,22 @@ namespace IncentiveDataLoader
 				SObject = "Apttus_Config2__PriceRule__c"
 			});
 
+			Write("\rCreating rule extensions files");
 
-
-			fileIndex = 1;
-			filesList = new List<String>();
+			filesList = new List<string>();
 			foreach (var records in priceRuleExtensions.Split(200))
 			{
-				var filename = $"priceRuleExtensions{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath =
+					$@"data\rule-extension\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
 				var file = new ImportFile<PriceRuleExtensionModel> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
 					JsonSerializer.Serialize(file, new JsonSerializerOptions
 					{
 						WriteIndented = true
 					}));
-				filesList.Add(filename);
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
 			dataPlanItems.Add(new DataPlanModel()
 			{
@@ -244,19 +258,21 @@ namespace IncentiveDataLoader
 			});
 
 
-
-			fileIndex = 1;
-			filesList = new List<String>();
+			Write("\rCreating rule entry files");
+			filesList = new List<string>();
 			foreach (var records in priceRuleEntries.Split(25))
 			{
-				var filename = $"priceRuleEntries{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath =
+					$@"data\rule-entry\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
 				var file = new ImportFile<PriceRuleEntry> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(filename);
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
+						JsonSerializer.Serialize(file, new JsonSerializerOptions
+						{
+							WriteIndented = true
+						}));
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
 			dataPlanItems.Add(new DataPlanModel()
 			{
@@ -266,18 +282,21 @@ namespace IncentiveDataLoader
 				SObject = "Apttus_Config2__PriceRuleEntry__c"
 			});
 
-			fileIndex = 1;
-			filesList = new List<String>();
+			Write("\rCreating participant files");
+			filesList = new List<string>();
 			foreach (var records in participants.Split(200))
 			{
-				var filename = $"participants{fileIndex++}.json";
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath =
+					$@"data\participant\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
 				var file = new ImportFile<ParticipantModel> { Records = records.ToList() };
-				File.WriteAllText($@"data\{filename}",
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(filename);
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				File.WriteAllText(folderPath,
+						JsonSerializer.Serialize(file, new JsonSerializerOptions
+						{
+							WriteIndented = true
+						}));
+				filesList.Add(folderPath.Replace("data\\", ""));
 			}
 			dataPlanItems.Add(new DataPlanModel()
 			{
@@ -286,7 +305,6 @@ namespace IncentiveDataLoader
 				SaveRefs = true,
 				SObject = Constants.Namespace + "IncentiveParticipant__c"
 			});
-
 			File.WriteAllText($@"data\plan.json",
 				JsonSerializer.Serialize(dataPlanItems, new JsonSerializerOptions
 				{

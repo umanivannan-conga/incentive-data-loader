@@ -1,3 +1,29 @@
 incentiveid a1wJ00000032wrTIAQ
 
-SELECT Id FROM Apttus_Config2__PriceRule__c WHERE Apttus_Config2__RulesetId__c in (SELECT PriceRuleSet__c FROM IncentivePriceRuleSetMapping__c WHERE Incentive__c = 'a1wJ00000032wrTIAQ')
+SELECT Id FROM Apttus_Config2__PriceRuleEntry__c WHERE  Apttus_Config2__PriceRuleId__c in ('a2kJ0000003HayJIAS'
+,'a2kJ0000003HayKIAS'
+,'a2kJ0000003HayHIAS'
+,'a2kJ0000003HayIIAS'
+,'a2kJ0000003HayFIAS'
+,'a2kJ0000003HayGIAS'
+,'a2kJ0000003HayLIAS'
+,'a2kJ0000003HayMIAS'
+,'a2kJ0000003HayDIAS'
+,'a2kJ0000003HayEIAS'
+,'a2kJ0000003HayNIAS'
+,'a2kJ0000003HayOIAS')
+
+(SELECT Id FROM Apttus_Config2__PriceRule__c WHERE Apttus_Config2__RulesetId__c in (SELECT PriceRuleSet__c FROM IncentivePriceRuleSetMapping__c WHERE Incentive__c = 'a1wJ00000032wrTIAQ'))
+
+('a2kJ0000003HayJIAS'
+,'a2kJ0000003HayKIAS'
+,'a2kJ0000003HayHIAS'
+,'a2kJ0000003HayIIAS'
+,'a2kJ0000003HayFIAS'
+,'a2kJ0000003HayGIAS'
+,'a2kJ0000003HayLIAS'
+,'a2kJ0000003HayMIAS'
+,'a2kJ0000003HayDIAS'
+,'a2kJ0000003HayEIAS'
+,'a2kJ0000003HayNIAS'
+,'a2kJ0000003HayOIAS')

@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -14,6 +15,7 @@ namespace IncentiveDataLoader
 
 		static void Main(string[] args)
 		{
+			WriteLine(DateTime.Now.ToString("G"));
 			IConfiguration config = new ConfigurationBuilder()
 				.AddJsonFile("appsettings.json", true, true)
 				.Build();
@@ -22,6 +24,7 @@ namespace IncentiveDataLoader
 
 			var loader = new Loader();
 			loader.Load(settings);
+			WriteLine(DateTime.Now.ToString("G"));
 		}
 	}
 }
