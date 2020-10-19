@@ -24,13 +24,14 @@ namespace IncentiveDataLoader
 		public void Load(AppSettings settings)
 		{
 			var incentiveRecords = new List<IncentiveModel>();
-			var ruleSets = new List<PriceRuleSetModel>();
+			var ruleSetRecords = new List<PriceRuleSetModel>();
 			var ruleSetExtensions = new List<PriceRulesetExtensionModel>();
-			var incentiveRulesetMappings = new List<IncentivePriceRulesetMap>();
+			var incentiveRulesetMappings = new List<IncentivePriceRulesetMapModel>();
 			var priceRules = new List<PriceRuleModel>();
 			var priceRuleExtensions = new List<PriceRuleExtensionModel>();
-			var priceRuleEntries = new List<PriceRuleEntry>();
+			var priceRuleEntries = new List<PriceRuleEntryModel>();
 			var participants = new List<ParticipantModel>();
+			var olis = new List<OliModel>();
 
 			var productIds = File.ReadAllLines(Constants.ProductListFileName).ToList();
 			var categories = File.ReadAllLines(Constants.CategoryListFileName)
@@ -39,6 +40,35 @@ namespace IncentiveDataLoader
 				.ToList();
 
 			var accountIds = File.ReadAllLines(Constants.AccountListFileName).ToList();
+
+			var oliCount = 0;
+			var accIndex = 0;
+			var prodIndex = 0;
+			var allProducts = productIds.Concat(categories.Select(s => s.ProductId).ToList()).ToList();
+			while (oliCount != settings.Configuration.OliCount)
+			{
+				var oli = new OliModel
+				{
+					Attributes = new RecordAttributes
+					{
+						Type = "Apttus_Config2__OrderLineItem__c",
+						ReferenceId = Guid.NewGuid().ToString("N")
+					},
+					AccountId = $"{accountIds[accIndex]}",
+					ProductId = $"{allProducts[prodIndex]}",
+					OrderId = settings.Configuration.OrderId,
+					PricingDate = $"{settings.Configuration.StartDate.AddDays(20):yyyy-MM-dd}T00:00:00.000Z",
+					Quantity = 1
+				};
+				if (accIndex == 25)
+					accIndex = 0;
+
+				if (prodIndex == allProducts.Count - 1)
+					prodIndex = 0;
+				oliCount++;
+				olis.Add(oli);
+			}
+
 			foreach (var setting in settings.LoadSettings)
 			{
 				for (var index = 1; index <= setting.IncentiveCount; index++)
@@ -64,247 +94,87 @@ namespace IncentiveDataLoader
 						AccountId = accountIds[0]
 					};
 
-					foreach (var accountId in accountIds)
+					participants.AddRange(accountIds.Select(accountId => new ParticipantModel
 					{
-
-						participants.Add(new ParticipantModel()
+						Attributes = new RecordAttributes
 						{
-							Attributes = new RecordAttributes
-							{
-								Type = Constants.Namespace + "IncentiveParticipant__c",
-								ReferenceId = Guid.NewGuid().ToString("N")
-							},
-							Account = accountId,
-							Incentive = $"@{incentiveModel.Attributes.ReferenceId}",
-							StartDate = $"{settings.Configuration.StartDate:yyyy-MM-dd}T00:00:00.000Z",
-							EndDate = $"{settings.Configuration.EndDate:yyyy-MM-dd}T00:00:00.000Z",
-						});
-					}
+							Type = Constants.Namespace + "IncentiveParticipant__c",
+							ReferenceId = Guid.NewGuid().ToString("N")
+						},
+						Account = accountId,
+						Incentive = $"@{incentiveModel.Attributes.ReferenceId}",
+						StartDate = $"{settings.Configuration.StartDate:yyyy-MM-dd}T00:00:00.000Z",
+						EndDate = $"{settings.Configuration.EndDate:yyyy-MM-dd}T00:00:00.000Z",
+					}));
 
 					for (var productIndex = 1; productIndex <= setting.ProductCount; productIndex++)
 					{
-						createPriceRuleSet(settings, productIndex - 1, incentiveModel, ruleSets, ruleSetExtensions, incentiveRulesetMappings, priceRules, priceRuleExtensions, productIds, priceRuleEntries);
+						createPriceRuleSet(
+							settings,
+							productIndex - 1,
+							incentiveModel,
+							ruleSetRecords,
+							ruleSetExtensions,
+							incentiveRulesetMappings,
+							priceRules,
+							priceRuleExtensions,
+							productIds,
+							priceRuleEntries,
+							Constants.Product);
 					}
 
 
-					foreach (var breakup in setting.CategoryBreakups)
+					foreach (var categoryIds in setting.CategoryBreakups.Select(breakup => categories
+						.Where(c => c.Level == breakup.Level)
+						.Select(s => s.Id).Take(breakup.Count).ToList()))
 					{
-						var categoryIds = categories.Where(c => c.Level == breakup.Level)
-							.Select(s => s.Id)
-							.Take(breakup.Count)
-							.ToList();
-
-						for (int categoryIndex = 1; categoryIndex <= categoryIds.Count; categoryIndex++)
+						for (var categoryIndex = 1; categoryIndex <= categoryIds.Count; categoryIndex++)
 						{
-							createPriceRuleSet(settings, categoryIndex - 1, incentiveModel, ruleSets, ruleSetExtensions, incentiveRulesetMappings, priceRules, priceRuleExtensions, categoryIds, priceRuleEntries, "Category");
+							createPriceRuleSet(
+								settings,
+								categoryIndex - 1,
+								incentiveModel,
+								ruleSetRecords,
+								ruleSetExtensions,
+								incentiveRulesetMappings,
+								priceRules,
+								priceRuleExtensions,
+								categoryIds,
+								priceRuleEntries,
+								Constants.Category
+								);
 						}
-
-
 					}
-
-
 					incentiveRecords.Add(incentiveModel);
 				}
 			}
-
+			Directory.Delete("data",true);
 			Directory.CreateDirectory("data");
 			WriteLine("");
 			WriteLine("Creating Files");
 
 			var dataPlanItems = new List<DataPlanModel>();
-			var filesList = new List<string>();
-			foreach (var records in incentiveRecords.Split(200))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath = $@"data\incentive\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}{filename}";
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				var file = new ImportFile<IncentiveModel> { Records = records.ToList() };
-				File.WriteAllText(folderPath,
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(folderPath.Replace("data\\",""));
-			}
-			Write("\rCreating incentive files");
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = "Apttus_Config2__Incentive__c"
-			});
-			Write("\rCreating rule set files");
-			filesList = new List<string>();
-			foreach (var records in ruleSets.Split(25))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var file = new ImportFile<PriceRuleSetModel> { Records = records.ToList() };
-				var folderPath =
-					$@"data\rule-set\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = "Apttus_Config2__PriceRuleset__c"
-			});
-			Write("\rCreating rule set incentive mapping files");
-			filesList = new List<string>();
-			foreach (var records in incentiveRulesetMappings.Split(200))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath =
-					$@"data\rule-set-incentive-map\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				var file = new ImportFile<IncentivePriceRulesetMap> { Records = records.ToList() };
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = "Apttus_CIM__IncentivePriceRuleSetMapping__c"
-			});
-
-			Write("\rCreating rule set extensions mapping files");
-			filesList = new List<string>();
-			foreach (var records in ruleSetExtensions.Split(200))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath =
-					$@"data\rule-set-extension\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				var file = new ImportFile<PriceRulesetExtensionModel> { Records = records.ToList() };
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-			dataPlanItems.Add(new DataPlanModel
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = Constants.Namespace + "PriceRulesetExtension__c"
-			});
-
-			Write("\rCreating rules files");
-
-			filesList = new List<string>();
-			foreach (var records in priceRules.Split(25))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath =
-					$@"data\rule\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				var file = new ImportFile<PriceRuleModel> { Records = records.ToList() };
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = "Apttus_Config2__PriceRule__c"
-			});
-
-			Write("\rCreating rule extensions files");
-
-			filesList = new List<string>();
-			foreach (var records in priceRuleExtensions.Split(200))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath =
-					$@"data\rule-extension\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				var file = new ImportFile<PriceRuleExtensionModel> { Records = records.ToList() };
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-					JsonSerializer.Serialize(file, new JsonSerializerOptions
-					{
-						WriteIndented = true
-					}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = Constants.Namespace + "PriceRuleExtension__c"
-			});
+			var oliDataItems = CreateJsonFiles(olis, "Apttus_Config2__OrderLineItem__c", @"data\oli\", 200);
+			var incentiveDataItems = CreateJsonFiles(incentiveRecords, "Apttus_Config2__Incentive__c", @"data\incentive\", 200);
+			var ruleSetDataItems = CreateJsonFiles(ruleSetRecords, "Apttus_Config2__PriceRuleset__c", @"data\rule-set\", 25);
+			var ruleSetMappingsDataItems = CreateJsonFiles(incentiveRulesetMappings, Constants.Namespace + "IncentivePriceRuleSetMapping__c", @"data\rule-set-incentive-map\", 200);
+			var ruleSetExtenstionDataItems = CreateJsonFiles(ruleSetExtensions, Constants.Namespace + "PriceRulesetExtension__c", @"data\rule-set-extension\", 200);
+			var priceRulesDataItems = CreateJsonFiles(priceRules, "Apttus_Config2__PriceRule__c", @"data\rule\", 25);
+			var priceRuleExtensionDataItems = CreateJsonFiles(priceRuleExtensions, Constants.Namespace + "PriceRuleExtension__c", @"data\rule-extension\", 200);
+			var priceRuleEntryDataItems = CreateJsonFiles(priceRuleEntries, "Apttus_Config2__PriceRuleEntry__c", @"data\rule-entry\", 5);
+			var participantsDataItems = CreateJsonFiles(priceRuleEntries, Constants.Namespace + "IncentiveParticipant__c", @"data\participant\", 200);
+			
+			dataPlanItems.Add(oliDataItems);
+			dataPlanItems.Add(incentiveDataItems);
+			dataPlanItems.Add(ruleSetDataItems);
+			dataPlanItems.Add(ruleSetMappingsDataItems);
+			dataPlanItems.Add(ruleSetExtenstionDataItems); 
+			dataPlanItems.Add(priceRulesDataItems);
+			dataPlanItems.Add(priceRuleExtensionDataItems);
+			dataPlanItems.Add(priceRuleEntryDataItems);
+			dataPlanItems.Add(participantsDataItems);
 
 
-			Write("\rCreating rule entry files");
-			filesList = new List<string>();
-			foreach (var records in priceRuleEntries.Split(25))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath =
-					$@"data\rule-entry\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				var file = new ImportFile<PriceRuleEntry> { Records = records.ToList() };
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-						JsonSerializer.Serialize(file, new JsonSerializerOptions
-						{
-							WriteIndented = true
-						}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = "Apttus_Config2__PriceRuleEntry__c"
-			});
-
-			Write("\rCreating participant files");
-			filesList = new List<string>();
-			foreach (var records in participants.Split(200))
-			{
-				var filename = $"{Guid.NewGuid():N}.json";
-				var folderPath =
-					$@"data\participant\{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
-				var file = new ImportFile<ParticipantModel> { Records = records.ToList() };
-				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
-				File.WriteAllText(folderPath,
-						JsonSerializer.Serialize(file, new JsonSerializerOptions
-						{
-							WriteIndented = true
-						}));
-				filesList.Add(folderPath.Replace("data\\", ""));
-			}
-			dataPlanItems.Add(new DataPlanModel()
-			{
-				Files = filesList,
-				ResolveRefs = true,
-				SaveRefs = true,
-				SObject = Constants.Namespace + "IncentiveParticipant__c"
-			});
 			File.WriteAllText($@"data\plan.json",
 				JsonSerializer.Serialize(dataPlanItems, new JsonSerializerOptions
 				{
@@ -312,16 +182,42 @@ namespace IncentiveDataLoader
 				}));
 		}
 
+		public DataPlanModel CreateJsonFiles<T>(List<T> records, string objectName, string folderRoot, int size) where T : Record
+		{
+			var model = new DataPlanModel
+			{
+				ResolveRefs = true,
+				SaveRefs = true,
+				SObject = objectName,
+				Files = new List<string>()
+			};
+			foreach (var splitRecords in records.Split(size))
+			{
+				var filename = $"{Guid.NewGuid():N}.json";
+				var folderPath = $@"{folderRoot}{filename.Substring(0, 2)}\{filename.Substring(filename.LastIndexOf('.') - 2, 2)}\{filename}";
+				Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
+				var file = new ImportFile<T> { Records = splitRecords.ToList() };
+				File.WriteAllText(folderPath,
+					JsonSerializer.Serialize(file, new JsonSerializerOptions
+					{
+						WriteIndented = true
+					}));
+				model.Files.Add(folderPath.Replace("data\\", ""));
+			}
+
+			return model;
+		}
+
 		private void createPriceRuleSet(AppSettings settings,
 			int productIndex,
 			IncentiveModel incentiveModel,
 			List<PriceRuleSetModel> ruleSets,
 			List<PriceRulesetExtensionModel> ruleSetExtensions,
-			List<IncentivePriceRulesetMap> incentiveRulesetMappings,
+			List<IncentivePriceRulesetMapModel> incentiveRulesetMappings,
 			List<PriceRuleModel> priceRules,
 			List<PriceRuleExtensionModel> priceRuleExtensions,
 			List<string> productIds,
-			List<PriceRuleEntry> priceRuleEntries,
+			List<PriceRuleEntryModel> priceRuleEntries,
 			String catalogItemType = "Product"
 			)
 		{
@@ -356,7 +252,7 @@ namespace IncentiveDataLoader
 			ruleSetExtensions.Add(priceRuleSetExtension);
 
 
-			var priceRuleSetMap = new IncentivePriceRulesetMap
+			var priceRuleSetMap = new IncentivePriceRulesetMapModel
 			{
 				Attributes = new RecordAttributes
 				{
@@ -451,7 +347,7 @@ namespace IncentiveDataLoader
 			priceRuleExtensions.Add(priceRuleExtension1);
 			priceRuleExtensions.Add(priceRuleExtension2);
 
-			var ruleEntry1 = new PriceRuleEntry
+			var ruleEntry1 = new PriceRuleEntryModel
 			{
 				Attributes = new RecordAttributes
 				{
@@ -471,7 +367,7 @@ namespace IncentiveDataLoader
 				AdjustmentType = null,
 				Sequence = "1"
 			};
-			var ruleEntry2 = new PriceRuleEntry
+			var ruleEntry2 = new PriceRuleEntryModel
 			{
 				Attributes = new RecordAttributes
 				{

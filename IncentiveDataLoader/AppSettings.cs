@@ -29,13 +29,18 @@ namespace IncentiveDataLoader
 		[JsonPropertyName("CategoryDimensionId")]
 		public string CategoryDimensionId { get; set; }
 		[JsonPropertyName("ProductDimensionId")]
-		public string ProductDimensionId { get; set; }	
+		public string ProductDimensionId { get; set; }
+		[JsonPropertyName("OrderId")]
+		public string OrderId { get; set; }
+		[JsonPropertyName("OliCount")]
+		public int OliCount { get; set; }
 	}
 
 	public class LoadSettings
 	{
 		[JsonPropertyName("IncentiveCount")]
 		public int IncentiveCount { get; set; }
+		
 		[JsonPropertyName("ProductCount")]
 		public int ProductCount { get; set; }
 		[JsonPropertyName("ParticipantCount")]
