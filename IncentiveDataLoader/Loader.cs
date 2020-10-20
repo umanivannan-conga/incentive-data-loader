@@ -173,7 +173,7 @@ namespace IncentiveDataLoader
       var priceRulesDataItems = CreateJsonFiles(priceRules, "Apttus_Config2__PriceRule__c", "rule", 200);
       var priceRuleExtensionDataItems = CreateJsonFiles(priceRuleExtensions, Constants.Namespace + "PriceRuleExtension__c", "rule-extension", 200);
       var priceRuleEntryDataItems = CreateJsonFiles(priceRuleEntries, "Apttus_Config2__PriceRuleEntry__c", "rule-entry", 200);
-      var participantsDataItems = CreateJsonFiles(priceRuleEntries, Constants.Namespace + "IncentiveParticipant__c", "participant", 200);
+      var participantsDataItems = CreateJsonFiles(participants, Constants.Namespace + "IncentiveParticipant__c", "participant", 200);
 
       dataPlanItems.Add(oliDataItems);
       dataPlanItems.Add(incentiveDataItems);
