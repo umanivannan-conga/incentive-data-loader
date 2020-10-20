@@ -217,7 +217,7 @@ namespace IncentiveDataLoader
           {
             WriteIndented = true
           }));
-        model.Files.Add(folderPath.Replace(this.dataOutPath, ""));
+        model.Files.Add(folderPath.Replace(this.dataOutPath + Path.PathSeparator, ""));
       }
 
       return model;
