@@ -162,10 +162,7 @@ namespace IncentiveDataLoader
       catch { }
       Directory.CreateDirectory(dataOutPath);
       WriteLine("");
-      WriteLine("Creating Files");
-
-      WriteLine("");
-      WriteLine("File path: " + dataOutPath);
+      WriteLine("Creating Files at: " + dataOutPath);
 
       var dataPlanItems = new List<DataPlanModel>();
       var oliDataItems = CreateJsonFiles(olis, "Apttus_Config2__OrderLineItem__c", "oli", 200);
@@ -217,7 +214,7 @@ namespace IncentiveDataLoader
           {
             WriteIndented = true
           }));
-        model.Files.Add(folderPath.Replace(this.dataOutPath, ""));
+        model.Files.Add(folderPath.Replace(this.dataOutPath + Path.AltDirectorySeparatorChar.ToString(), ""));
       }
 
       return model;
