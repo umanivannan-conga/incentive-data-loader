@@ -15,8 +15,8 @@ using static System.Console;
 
 /*
  TODO::
- 0. Update account list file to have 20K accounts to it - @ntayal-conga
- 1. Clean up the Dev Perf 1 env  - @ntayal-conga
+ 0. Update account list file to have 20K accounts to it - @ntayal-conga - DONE
+ 1. Clean up the Dev Perf 1 env  - @ntayal-conga - DONE
  2. Make use of ParticipantCount settings while adding participants to an incentive
  3. Fix the logic to increment accIndex and prodIndex in while loop on line 61
  4. Have unique list of accounts for each set. The # of accounts we need would be total of participants across all sets for a given run
