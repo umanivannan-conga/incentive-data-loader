@@ -12,6 +12,18 @@ using static System.Console;
 
 #endregion
 
+
+/*
+ TODO::
+ 0. Update account list file to have 20K accounts to it - @ntayal-conga
+ 1. Clean up the Dev Perf 1 env  - @ntayal-conga
+ 2. Make use of ParticipantCount settings while adding participants to an incentive
+ 3. Fix the logic to increment accIndex and prodIndex in while loop on line 61
+ 4. Have unique list of accounts for each set. The # of accounts we need would be total of participants across all sets for a given run
+ 5. Merge all appsettings into single file
+ 6. Have a setting folder path setting at each set level instead of global dataOut
+ 7. Add logic for participant offset to not repeat the accounts across sets.
+*/
 namespace IncentiveDataLoader
 {
   public class Loader
@@ -67,6 +79,8 @@ namespace IncentiveDataLoader
           PricingDate = $"{settings.Configuration.StartDate.AddDays(20):yyyy-MM-dd}T00:00:00.000Z",
           Quantity = 1
         };
+        accIndex++;
+        prodIndex++;
         if (accIndex == 25)
           accIndex = 0;
 
