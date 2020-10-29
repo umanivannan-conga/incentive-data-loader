@@ -22,8 +22,8 @@ namespace IncentiveDataLoader
 
 			var settings = config.GetSection("AppSettings").Get<AppSettings>();
 
-			var loader = new Loader();
-			loader.Load(settings);
+			var loader = new Loader(settings);
+			loader.Load();
 			WriteLine(DateTime.Now.ToString("G"));
 		}
 	}

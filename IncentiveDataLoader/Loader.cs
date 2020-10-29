@@ -28,17 +28,16 @@ namespace IncentiveDataLoader
 {
   public class Loader
   {
-    AppSettings settings;
-    String dataOutPath;
-    public Loader()
+	  private readonly AppSettings _settings;
+    string _dataOutPath;
+    public Loader(AppSettings settings)
     {
-
+	    _settings = settings;
     }
 
-    public void Load(AppSettings settings)
+    public void Load()
     {
-      this.settings = settings;
-      var incentiveRecords = new List<IncentiveModel>();
+	    var incentiveRecords = new List<IncentiveModel>();
       var ruleSetRecords = new List<PriceRuleSetModel>();
       var ruleSetExtensions = new List<PriceRulesetExtensionModel>();
       var incentiveRulesetMappings = new List<IncentivePriceRulesetMapModel>();
@@ -50,7 +49,7 @@ namespace IncentiveDataLoader
 
 
 
-      dataOutPath = $"{settings.Configuration.DataOutPath}";
+      _dataOutPath = $"{_settings.Configuration.DataOutPath}";
 
       var productIds = File.ReadAllLines(Constants.ProductListFileName).ToList();
       var categories = File.ReadAllLines(Constants.CategoryListFileName)
@@ -64,7 +63,7 @@ namespace IncentiveDataLoader
       var accIndex = 0;
       var prodIndex = 0;
       var allProducts = productIds.Concat(categories.Select(s => s.ProductId).ToList()).ToList();
-      while (oliCount != settings.Configuration.OliCount)
+      while (oliCount != _settings.Configuration.OliCount)
       {
         var oli = new OliModel
         {
@@ -75,8 +74,8 @@ namespace IncentiveDataLoader
           },
           AccountId = $"{accountIds[accIndex]}",
           ProductId = $"{allProducts[prodIndex]}",
-          OrderId = settings.Configuration.OrderId,
-          PricingDate = $"{settings.Configuration.StartDate.AddDays(20):yyyy-MM-dd}T00:00:00.000Z",
+          OrderId = _settings.Configuration.OrderId,
+          PricingDate = $"{_settings.Configuration.StartDate.AddDays(20):yyyy-MM-dd}T00:00:00.000Z",
           Quantity = 1
         };
         accIndex++;
@@ -90,7 +89,7 @@ namespace IncentiveDataLoader
         olis.Add(oli);
       }
 
-      foreach (var setting in settings.LoadSettings)
+      foreach (var setting in _settings.LoadSettings)
       {
         for (var index = 1; index <= setting.IncentiveCount; index++)
         {
@@ -102,16 +101,16 @@ namespace IncentiveDataLoader
               Type = "Apttus_Config2__Incentive__c",
               ReferenceId = Guid.NewGuid().ToString("N")
             },
-            Name = $"{settings.Configuration.IncentiveNamePrefix}-{index}",
+            Name = $"{_settings.Configuration.IncentiveNamePrefix}-{index}",
             Sequence = 1,
-            StartDate = settings.Configuration.StartDate.ToString("yyyy-MM-dd"),
-            EndDate = settings.Configuration.EndDate.ToString("yyyy-MM-dd"),
+            StartDate = _settings.Configuration.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = _settings.Configuration.EndDate.ToString("yyyy-MM-dd"),
             Status = "New",
             UseType = "Billing",
             BenefitLevel = Constants.IndividualParticipants,
             MeasurementLevel = Constants.IndividualParticipants,
-            IncentiveSubtypeId = settings.Configuration.SubTypeId,
-            IncentiveFormulaId = settings.Configuration.FormulaId,
+            IncentiveSubtypeId = _settings.Configuration.SubTypeId,
+            IncentiveFormulaId = _settings.Configuration.FormulaId,
             AccountId = accountIds[0]
           };
 
@@ -124,14 +123,14 @@ namespace IncentiveDataLoader
             },
             Account = accountId,
             Incentive = $"@{incentiveModel.Attributes.ReferenceId}",
-            StartDate = $"{settings.Configuration.StartDate:yyyy-MM-dd}T00:00:00.000Z",
-            EndDate = $"{settings.Configuration.EndDate:yyyy-MM-dd}T00:00:00.000Z",
+            StartDate = $"{_settings.Configuration.StartDate:yyyy-MM-dd}T00:00:00.000Z",
+            EndDate = $"{_settings.Configuration.EndDate:yyyy-MM-dd}T00:00:00.000Z",
           }));
 
           for (var productIndex = 1; productIndex <= setting.ProductCount; productIndex++)
           {
             createPriceRuleSet(
-              settings,
+              _settings,
               productIndex - 1,
               incentiveModel,
               ruleSetRecords,
@@ -152,7 +151,7 @@ namespace IncentiveDataLoader
             for (var categoryIndex = 1; categoryIndex <= categoryIds.Count; categoryIndex++)
             {
               createPriceRuleSet(
-                settings,
+                _settings,
                 categoryIndex - 1,
                 incentiveModel,
                 ruleSetRecords,
@@ -171,12 +170,12 @@ namespace IncentiveDataLoader
       }
       try
       {
-        Directory.Delete(dataOutPath, true);
+        Directory.Delete(_dataOutPath, true);
       }
       catch { }
-      Directory.CreateDirectory(dataOutPath);
+      Directory.CreateDirectory(_dataOutPath);
       WriteLine("");
-      WriteLine("Creating Files at: " + dataOutPath);
+      WriteLine("Creating Files at: " + _dataOutPath);
 
       var dataPlanItems = new List<DataPlanModel>();
       var oliDataItems = CreateJsonFiles(olis, "Apttus_Config2__OrderLineItem__c", "oli", 200);
@@ -200,7 +199,7 @@ namespace IncentiveDataLoader
       dataPlanItems.Add(participantsDataItems);
 
 
-      string tempPath = Path.Join(dataOutPath, "plan.json");
+      string tempPath = Path.Join(_dataOutPath, "plan.json");
       File.WriteAllText(tempPath,
         JsonSerializer.Serialize(dataPlanItems, new JsonSerializerOptions
         {
@@ -220,7 +219,7 @@ namespace IncentiveDataLoader
       foreach (var splitRecords in records.Split(size))
       {
         var filename = $"{Guid.NewGuid():N}.json";
-        var folderPath = Path.Join(this.dataOutPath, folderRoot, filename.Substring(0, 2), filename.Substring(filename.LastIndexOf('.') - 2, 2), filename);
+        var folderPath = Path.Join(this._dataOutPath, folderRoot, filename.Substring(0, 2), filename.Substring(filename.LastIndexOf('.') - 2, 2), filename);
         Directory.CreateDirectory(Path.GetDirectoryName(folderPath));
         var file = new ImportFile<T> { Records = splitRecords.ToList() };
         File.WriteAllText(folderPath,
@@ -228,7 +227,7 @@ namespace IncentiveDataLoader
           {
             WriteIndented = true
           }));
-        model.Files.Add(folderPath.Replace(this.dataOutPath + Path.AltDirectorySeparatorChar.ToString(), ""));
+        model.Files.Add(folderPath.Replace(this._dataOutPath + Path.AltDirectorySeparatorChar.ToString(), ""));
       }
 
       return model;
@@ -236,15 +235,15 @@ namespace IncentiveDataLoader
 
     private void createPriceRuleSet(AppSettings settings,
       int productIndex,
-      IncentiveModel incentiveModel,
-      List<PriceRuleSetModel> ruleSets,
-      List<PriceRulesetExtensionModel> ruleSetExtensions,
-      List<IncentivePriceRulesetMapModel> incentiveRulesetMappings,
-      List<PriceRuleModel> priceRules,
-      List<PriceRuleExtensionModel> priceRuleExtensions,
-      List<string> productIds,
-      List<PriceRuleEntryModel> priceRuleEntries,
-      String catalogItemType = "Product"
+      Record incentiveModel,
+      ICollection<PriceRuleSetModel> ruleSets,
+      ICollection<PriceRulesetExtensionModel> ruleSetExtensions,
+      ICollection<IncentivePriceRulesetMapModel> incentiveRulesetMappings,
+      ICollection<PriceRuleModel> priceRules,
+      ICollection<PriceRuleExtensionModel> priceRuleExtensions,
+      IReadOnlyList<string> productIds,
+      ICollection<PriceRuleEntryModel> priceRuleEntries,
+      string catalogItemType = "Product"
       )
     {
       var priceRuleSet = new PriceRuleSetModel
@@ -295,7 +294,7 @@ namespace IncentiveDataLoader
       {
         Attributes = new RecordAttributes
         {
-          Type = $"Apttus_Config2__PriceRule__c",
+          Type = "Apttus_Config2__PriceRule__c",
           ReferenceId = Guid.NewGuid().ToString("N")
         },
         Name = "B1",
@@ -321,7 +320,7 @@ namespace IncentiveDataLoader
       {
         Attributes = new RecordAttributes
         {
-          Type = $"Apttus_Config2__PriceRule__c",
+          Type = "Apttus_Config2__PriceRule__c",
           ReferenceId = Guid.NewGuid().ToString("N")
         },
         Name = "Q1",
