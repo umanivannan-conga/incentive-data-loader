@@ -14,8 +14,6 @@ namespace IncentiveDataLoader
 
 	public class Configuration
 	{
-		[JsonPropertyName("DataOutPath")]
-		public string DataOutPath { get; set; }
 		[JsonPropertyName("SubTypeId")]
 		public string SubTypeId { get; set; }
 		[JsonPropertyName("FormulaId")]
@@ -26,27 +24,24 @@ namespace IncentiveDataLoader
 		public DateTime StartDate { get; set; }
 		[JsonPropertyName("EndDate")]
 		public DateTime EndDate { get; set; }
-		[JsonPropertyName("CategoryDimensionId")]
-		public string CategoryDimensionId { get; set; }
-		[JsonPropertyName("ProductDimensionId")]
-		public string ProductDimensionId { get; set; }
 		[JsonPropertyName("OrderId")]
 		public string OrderId { get; set; }
-		[JsonPropertyName("OliCount")]
-		public int OliCount { get; set; }
 	}
 
 	public class LoadSettings
 	{
 		[JsonPropertyName("IncentiveCount")]
 		public int IncentiveCount { get; set; }
-		
 		[JsonPropertyName("ProductCount")]
 		public int ProductCount { get; set; }
 		[JsonPropertyName("ParticipantCount")]
 		public int ParticipantCount { get; set; }
+		[JsonPropertyName("OliCount")]
+		public int OliCount { get; set; }
+		[JsonPropertyName("SetName")] 
+		public string Setname { get; set; }
 		[JsonPropertyName("CategoryBreakups")]
-		public List<CategoryBreakup> CategoryBreakups{get; set; }
+		public List<CategoryBreakup> CategoryBreakups { get; set; }
 	}
 
 	public class CategoryBreakup
